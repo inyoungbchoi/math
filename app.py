@@ -15,7 +15,7 @@ def make_rng(seed: str) -> random.Random:
 def digits_range(d: int) -> Tuple[int, int]:
     if d == 1: return (1, 9)
     if d == 2: return (10, 99)
-    if d == 3: return (10지")
+    if d == 3: return (100, 999)
 
 # 사이드바 버튼 줄바꿈 방지 & 크기 통일
 st.markdown("""
