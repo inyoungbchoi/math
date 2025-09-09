@@ -4,7 +4,7 @@ import random
 import html
 from typing import Tuple
 
-st.set_page_config(page_title="사칙연산 프린트 생성기", page_icon="🧮", layout="wide")
+st.set_page_config(page_title="서아의 연산 학습지", page_icon="🧮", layout="wide")
 
 # -----------------------------
 # 유틸
@@ -142,6 +142,20 @@ OP_TITLES = {
 # -----------------------------
 st.sidebar.title("사칙연산 프린트 생성기")
 
+# 사이드바 버튼 줄바꿈 방지 & 크기 통일
+st.markdown("""
+<style>
+/* 사이드바 영역의 버튼 공통 스타일 */
+section[data-testid="stSidebar"] .stButton > button {
+  width: 100%;
+  font-size: 0.95rem;      /* 글자 크기 살짝 축소 */
+  padding: 8px 10px;       /* 내부 여백 */
+  white-space: nowrap;     /* 줄바꿈 금지 → '10' 깨짐 방지 */
+  line-height: 1.1;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # 레이아웃 & 계산 규칙
 layout_type = st.sidebar.radio("문제 배열 방식", ["가로셈", "세로셈"], index=0)
 allow_carry = st.sidebar.checkbox("덧셈: 받아올림 허용", True)
@@ -233,13 +247,21 @@ def make_sheet_html(title: str, seed: str, problems, answers=None, layout="가�
     safe_title = html.escape(title)
     safe_seed  = html.escape(seed)
 
-    css = """
-    :root { --sheet-max: 800px; }
-    html, body {
+    # 레이아웃별 그리드/셀 높이 값
+    if layout == "가로셈":
+        grid_css   = "display:grid; grid-template-columns:1fr 1fr; gap:8px;"
+        cell_min_h = "56px"   # 가로셈은 기존처럼 낮게
+    else:  # 세로셈
+        grid_css   = "display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;"
+        cell_min_h = "120px"  # 세로셈은 높게(두 줄짜리 한 칸)
+
+    css = f"""
+    :root {{ --sheet-max: 800px; }}
+    html, body {{
       margin: 0; padding: 0; background: transparent;
       font-family: Pretendard, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-    }
-    #print-area {
+    }}
+    #print-area {{
       width: 100%;
       max-width: var(--sheet-max);
       margin: 24px auto;
@@ -247,57 +269,53 @@ def make_sheet_html(title: str, seed: str, problems, answers=None, layout="가�
       padding: 24px;
       border-radius: 12px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-    }
-    .sheet-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:12px; }
-    .sheet-title { font-weight:800; font-size: 22px; }
-    .sheet-meta { color:#64748b; font-size:12px; }
-    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .cell { border:1px solid #cbd5e1; padding:12px 14px; min-height:56px; background:white; }
-    .no { font-weight:700; margin-bottom:6px; }
-    .expr { font-size:20px; line-height:1.2; text-align:center; letter-spacing:0.5px; }
-    .ans-line { width: 120px; border-bottom:1px solid #cbd5e1; height: 28px; display:inline-block; }
-    .ans-filled { width: 120px; text-align:center; display:inline-block; }
-    /* 세로셈 */
-    .vwrap { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .vwrap .row { text-align: right; font-size: 20px; line-height: 1.2; }
-    .vwrap .line { border-top: 1px solid #0f172a; margin: 4px 0; }
-    .vbox { display:flex; justify-content:space-between; align-items:flex-start; }
-    .vno { width: 28px; font-weight:700; }
-    @media print {
-      @page { size: A4 portrait; margin: 12mm; }
-      #print-area { box-shadow:none; padding:0; margin:0 auto; }
-      .grid-2 { gap:6px; }
-      .cell { min-height:52px; }
-      .toolbar { display:none; }
-    }
-    .toolbar { display:flex; align-items:center; justify-content:space-between; margin:16px auto 24px; max-width:var(--sheet-max); }
-    .print-btn { background:#111; color:white; border:none; padding:10px 16px; border-radius:12px; cursor:pointer; }
-    .print-btn:hover { opacity:.9; }
+    }}
+    .sheet-header {{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:12px; }}
+    .sheet-title {{ font-weight:800; font-size: 22px; }}
+    .sheet-meta {{ color:#64748b; font-size:12px; }}
+    .grid {{ {grid_css} }}
+    .cell {{ border:1px solid #cbd5e1; padding:12px 14px; min-height:{cell_min_h}; background:white; }}
+    .no {{ font-weight:700; margin-bottom:6px; }}
+    .expr {{ font-size:20px; line-height:1.2; text-align:center; letter-spacing:0.5px; }}
+    .ans-line {{ width: 120px; border-bottom:1px solid #cbd5e1; height: 28px; display:inline-block; }}
+    .ans-filled {{ width: 120px; text-align:center; display:inline-block; }}
+
+    /* 세로셈 전용 서체/라인 */
+    .vwrap {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }}
+    .vwrap .row {{ text-align: right; font-size: 20px; line-height: 1.2; }}
+    .vwrap .line {{ border-top: 1px solid #0f172a; margin: 4px 0; }}
+    .vbox {{ display:flex; justify-content:space-between; align-items:flex-start; }}
+    .vno {{ width: 28px; font-weight:700; }}
+
+    @media print {{
+      @page {{ size: A4 portrait; margin: 12mm; }}
+      #print-area {{ box-shadow:none; padding:0; margin:0 auto; }}
+      .grid {{ gap:6px; }}
+      .cell {{ min-height:{cell_min_h}; }}
+      .toolbar {{ display:none; }}
+    }}
+    .toolbar {{ display:flex; align-items:center; justify-content:space-between; margin:16px auto 24px; max-width:var(--sheet-max); }}
+    .print-btn {{ background:#111; color:white; border:none; padding:10px 16px; border-radius:12px; cursor:pointer; }}
+    .print-btn:hover {{ opacity:.9; }}
     """
 
-    # 본문 만들기 (f-string 내부에 조건/이스케이프 넣지 않도록 분기 결과를 변수로 구성)
+    # 본문(문제 목록) 구성 – 기존 로직 그대로, 단 클래스명 .grid 사용
     rows_html_list = []
     for i, (a, sym, b) in enumerate(problems, start=1):
-        # 정답 채우기 여부
         ans_val = None if answers is None else answers[i-1]
-
         if layout == "가로셈":
             expr = f"{a} {html.escape(sym)} {b} ="
-
             if ans_val is not None:
                 ans_block = f"<div class='ans-filled'><strong>{ans_val}</strong></div>"
             else:
                 ans_block = "<div class='ans-line'></div>"
-
             inner = (
                 f"<div class='no'>{i}.</div>"
                 f"<div class='expr'>{expr}</div>"
                 f"{ans_block}"
             )
             rows_html_list.append(f"<div class='cell'>{inner}</div>")
-
-        else:  # 세로셈
-            # 세로셈 블록을 별도 함수로 생성 (가독성/안정성)
+        else:
             vhtml = render_vertical(a, sym, b, ans_val)
             inner = (
                 f"<div class='vbox'>"
@@ -325,7 +343,7 @@ def make_sheet_html(title: str, seed: str, problems, answers=None, layout="가�
           <div class="sheet-title">{safe_title}{title_suffix}</div>
           <div class="sheet-meta">문제 수: 20 · Seed: {safe_seed}</div>
         </div>
-        <div class="grid-2">
+        <div class="grid">
           {body_html}
         </div>
       </div>
@@ -355,3 +373,4 @@ with tab2:
 
 # 사이드바 안내
 st.sidebar.info("세트 번호를 버튼으로 선택하세요. 각 탭 하단의 '프린트하기'로 A4 세로 1장에 출력하세요.")
+
